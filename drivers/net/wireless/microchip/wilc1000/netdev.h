@@ -202,6 +202,7 @@ struct wilc_vif {
 	u8 idx;
 	u8 iftype;
 	int monitor_flag;
+	int primary_if;
 	int mac_opened;
 	u32 mgmt_reg_stypes;
 	struct net_device_stats netstats;
