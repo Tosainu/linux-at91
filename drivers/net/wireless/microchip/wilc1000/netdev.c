@@ -192,6 +192,9 @@ static int init_irq(struct net_device *dev)
 	struct wilc_vif *vif = netdev_priv(dev);
 	struct wilc *wl = vif->wilc;
 
+	// This is no longer supported, the firmware for the WILC3000 does not yank the IRQN line back to the gpio
+	return 0;
+
 	if (wl->dev_irq_num <= 0)
 		return 0;
 
