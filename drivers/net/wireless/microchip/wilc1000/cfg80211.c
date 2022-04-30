@@ -2113,8 +2113,14 @@ static int del_virtual_intf(struct wiphy *wiphy, struct wireless_dev *wdev)
 	    wdev->iftype == NL80211_IFTYPE_P2P_GO)
 		wilc_wfi_deinit_mon_interface(wl, true);
 	vif = netdev_priv(wdev->netdev);
-	unregister_netdevice(vif->ndev);
 	vif->monitor_flag = 0;
+
+	// If this interface was created by probe()->wilc_cfg80211_init(), then
+	// it was created when the driver was initialized. Only remove()->wilc_netdev_cleanup()
+	// shall be allowed to unregister this interface.
+	if (vif->primary_if) return 0;
+
+	unregister_netdevice(vif->ndev);
 
 	/* update the vif list */
 	mutex_lock(&wl->vif_mutex);
@@ -2375,6 +2381,7 @@ int wilc_cfg80211_init(struct wilc **wilc, struct device *dev, int io_type,
 		goto free_wq;
 	}
 
+	vif->primary_if = 1;
 	wilc_sysfs_init(wl);
 
 	return 0;
