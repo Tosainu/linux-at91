@@ -139,6 +139,44 @@ static int wilc_sdio_cmd53(struct wilc *wilc, struct sdio_cmd53 *cmd)
 	return ret;
 }
 
+static int wilc_sdio_cmd53_read32(struct wilc *wilc, u32 function, u32 addr,
+				  u32 *value)
+{
+	struct sdio_func *func = container_of(wilc->dev, struct sdio_func, dev);
+	int ret;
+
+	sdio_claim_host(func);
+	func->num = function;
+
+	*value = sdio_readl(func, addr, &ret);
+
+	sdio_release_host(func);
+
+	if (ret)
+		dev_err(&func->dev, "%s..failed, err(%d)\n", __func__,  ret);
+
+	return ret;
+}
+
+static int wilc_sdio_cmd53_write32(struct wilc *wilc, u32 function, u32 addr,
+				  u32 value)
+{
+	struct sdio_func *func = container_of(wilc->dev, struct sdio_func, dev);
+	int ret;
+
+	sdio_claim_host(func);
+	func->num = function;
+
+	sdio_writel(func, value, addr, &ret);
+
+	sdio_release_host(func);
+
+	if (ret)
+		dev_err(&func->dev, "%s..failed, err(%d)\n", __func__,  ret);
+
+	return ret;
+}
+
 static int wilc_sdio_probe(struct sdio_func *func,
 			   const struct sdio_device_id *id)
 {
@@ -417,7 +455,6 @@ static int wilc_sdio_set_block_size(struct wilc *wilc, u8 func_num,
 static int wilc_sdio_write_reg(struct wilc *wilc, u32 addr, u32 data)
 {
 	struct sdio_func *func = dev_to_sdio_func(wilc->dev);
-	struct wilc_sdio *sdio_priv = wilc->bus_data;
 	int ret;
 
 	cpu_to_le32s(&data);
@@ -435,8 +472,6 @@ static int wilc_sdio_write_reg(struct wilc *wilc, u32 addr, u32 data)
 			dev_err(&func->dev,
 				"Failed cmd 52, write reg (%08x) ...\n", addr);
 	} else {
-		struct sdio_cmd53 cmd;
-
 		/**
 		 *      set the AHB address
 		 **/
@@ -444,15 +479,7 @@ static int wilc_sdio_write_reg(struct wilc *wilc, u32 addr, u32 data)
 		if (ret)
 			return ret;
 
-		cmd.read_write = 1;
-		cmd.function = 0;
-		cmd.address = WILC_SDIO_FBR_DATA_REG;
-		cmd.block_mode = 0;
-		cmd.increment = 1;
-		cmd.count = 4;
-		cmd.buffer = (u8 *)&data;
-		cmd.block_size = sdio_priv->block_size;
-		ret = wilc_sdio_cmd53(wilc, &cmd);
+		ret = wilc_sdio_cmd53_write32(wilc, 0, WILC_SDIO_FBR_DATA_REG, data);
 		if (ret)
 			dev_err(&func->dev,
 				"Failed cmd53, write reg (%08x)...\n", addr);
@@ -537,7 +564,6 @@ static int wilc_sdio_write(struct wilc *wilc, u32 addr, u8 *buf, u32 size)
 static int wilc_sdio_read_reg(struct wilc *wilc, u32 addr, u32 *data)
 {
 	struct sdio_func *func = dev_to_sdio_func(wilc->dev);
-	struct wilc_sdio *sdio_priv = wilc->bus_data;
 	int ret;
 
 	if (addr >= 0xf0 && addr <= 0xff) { /* only vendor specific registers */
@@ -555,22 +581,11 @@ static int wilc_sdio_read_reg(struct wilc *wilc, u32 addr, u32 *data)
 		}
 		*data = cmd.data;
 	} else {
-		struct sdio_cmd53 cmd;
-
 		ret = wilc_sdio_set_func0_csa_address(wilc, addr);
 		if (ret)
 			return ret;
 
-		cmd.read_write = 0;
-		cmd.function = 0;
-		cmd.address = WILC_SDIO_FBR_DATA_REG;
-		cmd.block_mode = 0;
-		cmd.increment = 1;
-		cmd.count = 4;
-		cmd.buffer = (u8 *)data;
-
-		cmd.block_size = sdio_priv->block_size;
-		ret = wilc_sdio_cmd53(wilc, &cmd);
+		ret = wilc_sdio_cmd53_read32(wilc, 0, WILC_SDIO_FBR_DATA_REG, data);
 		if (ret) {
 			dev_err(&func->dev,
 				"Failed cmd53, read reg (%08x)...\n", addr);

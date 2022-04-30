@@ -906,7 +906,7 @@ int wilc_wlan_handle_txq(struct wilc *wilc, u32 *txq_count)
 	int ret = 0;
 	int counter;
 	int timeout;
-	u32 vmm_table[WILC_VMM_TBL_SIZE];
+	u32 *vmm_table = wilc->vmm_table;
 	u8 ac_pkt_num_to_chip[NQUEUES] = {0, 0, 0, 0};
 	const struct wilc_hif_func *func;
 	int srcu_idx;
@@ -1595,6 +1595,8 @@ void wilc_wlan_cleanup(struct net_device *dev)
 	while ((rqe = wilc_wlan_rxq_remove(wilc)))
 		kfree(rqe);
 
+	kfree(wilc->vmm_table);
+	wilc->vmm_table = NULL;
 	kfree(wilc->rx_buffer);
 	wilc->rx_buffer = NULL;
 	kfree(wilc->tx_buffer);
@@ -1877,6 +1879,16 @@ int wilc_wlan_init(struct net_device *dev)
 		goto fail;
 	}
 
+	if (!wilc->vmm_table)
+		wilc->vmm_table = kmalloc(sizeof(u32) * WILC_VMM_TBL_SIZE, GFP_KERNEL);
+	PRINT_D(vif->ndev, TX_DBG, "g_wlan.vmm_table =%p\n", wilc->vmm_table);
+
+	if (!wilc->vmm_table) {
+		ret = -ENOBUFS;
+		PRINT_ER(vif->ndev, "Can't allocate VMMTable");
+		goto fail;
+	}
+
 	ret = init_chip(dev);
 	if (ret)
 		goto fail;
@@ -1885,6 +1897,8 @@ int wilc_wlan_init(struct net_device *dev)
 
 fail:
 
+	kfree(wilc->vmm_table);
+	wilc->vmm_table = NULL;
 	kfree(wilc->rx_buffer);
 	wilc->rx_buffer = NULL;
 	kfree(wilc->tx_buffer);

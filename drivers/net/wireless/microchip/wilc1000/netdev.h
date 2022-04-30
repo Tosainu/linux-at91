@@ -387,6 +387,8 @@ struct wilc_tx_queue_status {
 	bool initialized;
 };
 
+#define WILC_VMM_TBL_SIZE		64
+
 struct wilc {
 	struct wiphy *wiphy;
 	const struct wilc_hif_func *hif_func;
@@ -436,6 +438,8 @@ struct wilc {
 	u8 *rx_buffer;
 	u32 rx_buffer_offset;
 	u8 *tx_buffer;
+
+	u32 *vmm_table;
 
 	struct txq_handle txq[NQUEUES];
 	int txq_entries;
