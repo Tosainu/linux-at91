@@ -212,7 +212,7 @@ static void cfg_connect_result(enum conn_event conn_disconn_evt, u8 mac_status,
 		}
 
 		PRINT_INFO(vif->ndev, CFG80211_DBG,
-			   "Association request info elements length = %d\n",
+			   "Association request info elements length = %zu\n",
 			   conn_info->req_ies_len);
 		PRINT_INFO(vif->ndev, CFG80211_DBG,
 			   "Association response info elements length = %d\n",
@@ -318,7 +318,7 @@ static int scan(struct wiphy *wiphy, struct cfg80211_scan_request *request)
 
 	PRINT_INFO(vif->ndev, CFG80211_DBG, "Requested num of channel %d\n",
 		   request->n_channels);
-	PRINT_INFO(vif->ndev, CFG80211_DBG, "Scan Request IE len =  %d\n",
+	PRINT_INFO(vif->ndev, CFG80211_DBG, "Scan Request IE len =  %zu\n",
 		   request->ie_len);
 	PRINT_INFO(vif->ndev, CFG80211_DBG, "Number of SSIDs %d\n",
 		   request->n_ssids);
@@ -1144,12 +1144,13 @@ static inline void wilc_wfi_cfg_parse_ch_attr(u8 *buf, u32 len, u8 sta_ch)
 
 	if (ch_list_idx) {
 		u16 elem_size;
+		unsigned int i = 0;
 
 		ch_list = (struct wilc_attr_ch_list *)&buf[ch_list_idx];
 		/* the number of bytes following the final 'elem' member */
 		elem_size = le16_to_cpu(ch_list->attr_len) -
 			(sizeof(*ch_list) - sizeof(struct wilc_attr_entry));
-		for (unsigned int i = 0; i < elem_size;) {
+		while (i < elem_size) {
 			struct wilc_ch_list_elem *e;
 
 			e = (struct wilc_ch_list_elem *)(ch_list->elem + i);
@@ -1683,7 +1684,7 @@ static int start_ap(struct wiphy *wiphy, struct net_device *dev,
 	PRINT_INFO(vif->ndev, HOSTAPD_DBG, "Starting ap\n");
 
 	PRINT_INFO(vif->ndev, CFG80211_DBG,
-		   "Interval= %d\n DTIM period= %d\n Head length= %d Tail length= %d channelnum[%d]\n",
+		   "Interval= %d\n DTIM period= %d\n Head length= %zu Tail length= %zu channelnum[%d]\n",
 		   settings->beacon_interval, settings->dtim_period,
 		   settings->beacon.head_len, settings->beacon.tail_len,
 		   channelnum);
